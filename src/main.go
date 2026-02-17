@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"slices"
+	"time"
 
 	"github.com/disintegration/imaging"
 )
@@ -123,8 +124,9 @@ func bruteForce(grid [][]byte, nCol, nRow int, colors []byte) ([][2]int, int) {
 		if len(current) == numQueens {
 			iterCount++
 
-			if iterCount%10000000000 == 0 {
-				fmt.Printf("Checked %d combinations...\n", iterCount)
+			if iterCount%10000000 == 0 {
+				fmt.Printf("\n%d combinations checked\n", iterCount)
+				printGridResult(grid, current, nRow, nCol)
 			}
 
 			if checkCombination(current, grid, colors) {
@@ -147,6 +149,39 @@ func bruteForce(grid [][]byte, nCol, nRow int, colors []byte) ([][2]int, int) {
 	generate(0, [][2]int{})
 
 	return result, iterCount
+}
+
+func saveResultAsTxt(grid [][]byte, positions [][2]int, rowCount, colCount int, iterCount int, elapsed time.Duration, outputPath string) error {
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write grid with queens
+	for i := 0; i < rowCount; i++ {
+		for j := 0; j < colCount; j++ {
+			isQueen := false
+			for _, pos := range positions {
+				if pos[0] == i && pos[1] == j {
+					isQueen = true
+					break
+				}
+			}
+			if isQueen {
+				fmt.Fprintf(file, "#")
+			} else {
+				fmt.Fprintf(file, "%c", grid[i][j])
+			}
+		}
+		fmt.Fprintln(file)
+	}
+
+	// Write stats
+	fmt.Fprintf(file, "Time elapsed: %d ms\n", elapsed.Milliseconds())
+	fmt.Fprintf(file, "Number of combinations tried: %d combinations\n", iterCount)
+
+	return nil
 }
 
 func readGridFromImage(filename string, n int) ([][]byte, int, []byte, map[byte]color.RGBA, error) {
@@ -202,6 +237,37 @@ func readGridFromImage(filename string, n int) ([][]byte, int, []byte, map[byte]
 	}
 
 	return grid, n, colors, charToColor, nil
+}
+
+func buildCharToColor() map[byte]color.RGBA { // If input is txt, no color saved to use in save as image.
+	return map[byte]color.RGBA{
+		'A': {255, 107, 107, 255}, // Red
+		'B': {107, 159, 255, 255}, // Blue
+		'C': {107, 255, 107, 255}, // Green
+		'D': {255, 215, 0, 255},   // Yellow
+		'E': {196, 107, 255, 255}, // Purple
+		'F': {255, 165, 0, 255},   // Orange
+		'G': {255, 105, 180, 255}, // Pink
+		'H': {107, 255, 215, 255}, // Teal
+		'I': {160, 82, 45, 255},   // Brown
+		'J': {0, 255, 255, 255},   // Cyan
+		'K': {255, 20, 147, 255},  // Deep Pink
+		'L': {50, 205, 50, 255},   // Lime Green
+		'M': {255, 140, 0, 255},   // Dark Orange
+		'N': {0, 191, 255, 255},   // Deep Sky Blue
+		'O': {148, 0, 211, 255},   // Dark Violet
+		'P': {0, 128, 128, 255},   // Dark Teal
+		'Q': {220, 20, 60, 255},   // Crimson
+		'R': {127, 255, 0, 255},   // Chartreuse
+		'S': {255, 228, 196, 255}, // Bisque
+		'T': {70, 130, 180, 255},  // Steel Blue
+		'U': {244, 164, 96, 255},  // Sandy Brown
+		'V': {0, 255, 127, 255},   // Spring Green
+		'W': {255, 99, 71, 255},   // Tomato
+		'X': {123, 104, 238, 255}, // Medium Slate Blue
+		'Y': {255, 255, 102, 255}, // Light Yellow
+		'Z': {64, 224, 208, 255},  // Turquoise
+	}
 }
 
 func saveResultAsImage(grid [][]byte, positions [][2]int, n int, charToColor map[byte]color.RGBA, outputPath string) error {
@@ -344,6 +410,7 @@ func main() {
 			}
 
 			printGrid(grid)
+			charToColor = buildCharToColor() // Generate the map from character to color if input is text instead of image
 		} else {
 			fmt.Println("No text file content")
 			return
@@ -362,22 +429,49 @@ func main() {
 		return
 	}
 
+	startTime := time.Now()
 	result, iterCount := bruteForce(grid, colCount, rowCount, colors)
+	elapsed := time.Since(startTime)
 
 	if result != nil {
-		fmt.Printf("\n\nIteration count: %d\n", iterCount)
+		fmt.Printf("\n\nSearch time: %d ms\n", elapsed.Milliseconds())
+		fmt.Printf("Number of combinations tried: %d combinations\n", iterCount)
 		fmt.Printf("Result:\n")
 		printGridResult(grid, result, rowCount, colCount)
 
-		if inputType == "image" {
-			err := saveResultAsImage(grid, result, rowCount, charToColor, "../test/output/result.png")
+		// Ask for txt
+		var saveTxt string
+		fmt.Print("\nDo you want to save results to txt? (y/n): ")
+		fmt.Scan(&saveTxt)
+		if saveTxt == "y" {
+			fmt.Print("\nInput filename for .txt file : ")
+			var txtFileName string
+			fmt.Scan(&txtFileName)
+			err := saveResultAsTxt(grid, result, rowCount, colCount, iterCount, elapsed, "../test/output/"+txtFileName+".txt")
+			if err != nil {
+				fmt.Printf("Error saving txt: %v\n", err)
+			} else {
+				fmt.Println(".txt file saved to filepath ../test/output/" + txtFileName + ".txt")
+			}
+		}
+
+		// Ask for image
+		var saveImg string
+		fmt.Print("Do you want to save results to image? (y/n): ")
+		fmt.Scan(&saveImg)
+		if saveImg == "y" {
+			fmt.Print("\nInput filename for image file : ")
+			var imgFileName string
+			fmt.Scan(&imgFileName)
+			err := saveResultAsImage(grid, result, rowCount, charToColor, "../test/output/"+imgFileName+".png")
 			if err != nil {
 				fmt.Printf("Error saving image: %v\n", err)
 			} else {
-				fmt.Println("Result saved to ../test/output/result.png")
+				fmt.Println("Image saved to filepath ../test/output/" + imgFileName + ".png")
 			}
 		}
 	} else {
 		fmt.Printf("\n\nNo solution found after %d iterations.\n", iterCount)
+		fmt.Printf("Time elapsed: %d ms\n", elapsed.Milliseconds())
 	}
 }

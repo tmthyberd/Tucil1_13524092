@@ -1,0 +1,9 @@
+#AAAAAA
+BB#BBBB
+CCCC#CC
+D#DDDDD
+EEEEE#E
+FFF#FFF
+GGGGGG#
+Time elapsed: 128 ms
+Number of combinations tried: 8850933 combinations
