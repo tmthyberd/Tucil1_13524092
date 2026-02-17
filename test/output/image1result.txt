@@ -1,0 +1,9 @@
+AAA#ABB
+A#AABBD
+AAAE#FD
+EE#EFFD
+EGEFF#D
+#GFFFDD
+GDDDDD#
+Time elapsed: 588 ms
+Number of combinations tried: 36526895 combinations
