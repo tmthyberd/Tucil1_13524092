@@ -1,6 +1,11 @@
 # Tucil1 - Queens Game Solver (Brute Force)
 
-**13524092**
+**13524092 - Timothy Bernard Soeharto**
+
+## Notes Penting
+
+Pastikan berada di folder bin saat menjalankan main.exe karena fixed pathing ke folder input.
+Pastikan juga queen.png berada di folder yang sama dengan main.exe, karena fixed pathing dan main.exe butuh queen.png saat save image.
 
 ## Deskripsi Program
 
