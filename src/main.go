@@ -184,19 +184,26 @@ func saveResultAsTxt(grid [][]byte, positions [][2]int, rowCount, colCount int, 
 	return nil
 }
 
+func colorDistance(c1, c2 [3]uint8) float64 {
+	dr := float64(c1[0]) - float64(c2[0])
+	dg := float64(c1[1]) - float64(c2[1])
+	db := float64(c1[2]) - float64(c2[2])
+	return math.Sqrt(dr*dr + dg*dg + db*db)
+}
+
 func readGridFromImage(filename string, n int) ([][]byte, int, []byte, map[byte]color.RGBA, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, 0, nil, nil, err
 	}
-	defer file.Close() // Close file after return
+	defer file.Close()
 
-	img, _, err := image.Decode(file) // Like algeo, decode the image to become a matriks of colors
+	img, _, err := image.Decode(file)
 	if err != nil {
 		return nil, 0, nil, nil, err
 	}
 
-	bounds := img.Bounds() // Take image dimension
+	bounds := img.Bounds()
 	width := bounds.Max.X - bounds.Min.X
 	height := bounds.Max.Y - bounds.Min.Y
 
@@ -209,26 +216,40 @@ func readGridFromImage(filename string, n int) ([][]byte, int, []byte, map[byte]
 		grid[i] = make([]byte, n)
 	}
 
-	colorMap := make(map[[3]uint8]byte)      // maps RGB -> character
-	charToColor := make(map[byte]color.RGBA) // Maps character -> actual RGBA color
+	colorMap := make(map[[3]uint8]byte)
+	charToColor := make(map[byte]color.RGBA)
 	colors := []byte{}
 	nextColorChar := byte('A')
 
+	threshold := 30.0
+
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
-			// Sample center of each cell
-			x := j*sampleCellSize + sampleCellSize/2
-			y := i*sampleCellSize + sampleCellSize/2
+			cx := j*sampleCellSize + sampleCellSize/2
+			cy := i*sampleCellSize + sampleCellSize/2
 
-			r, g, b, _ := img.At(x, y).RGBA() // Take color at approximately the middle of the cell
-			cellColor := [3]uint8{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8)}
+			r, g, b, _ := img.At(cx, cy).RGBA()
+			sampledColor := [3]uint8{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8)}
 
-			if char, exists := colorMap[cellColor]; exists {
-				grid[i][j] = char
+			// Find closest existing color
+			foundChar := byte(0)
+			minDist := math.MaxFloat64
+			for existingColor, char := range colorMap {
+				dr := float64(sampledColor[0]) - float64(existingColor[0])
+				dg := float64(sampledColor[1]) - float64(existingColor[1])
+				db := float64(sampledColor[2]) - float64(existingColor[2])
+				dist := math.Sqrt(dr*dr + dg*dg + db*db)
+				if dist < minDist {
+					minDist = dist
+					foundChar = char
+				}
+			}
+
+			if minDist < threshold {
+				grid[i][j] = foundChar
 			} else {
-				colorMap[cellColor] = nextColorChar
-				// Store actual color for this character
-				charToColor[nextColorChar] = color.RGBA{cellColor[0], cellColor[1], cellColor[2], 255} // Maps the char to the actual color
+				colorMap[sampledColor] = nextColorChar
+				charToColor[nextColorChar] = color.RGBA{sampledColor[0], sampledColor[1], sampledColor[2], 255}
 				grid[i][j] = nextColorChar
 				colors = append(colors, nextColorChar)
 				nextColorChar++
@@ -336,6 +357,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+
 		colCount = rowCount
 
 		fmt.Println("Grid read from image:")
@@ -423,9 +445,8 @@ func main() {
 	fmt.Printf("Amount of color: %d\n", len(colors))
 	fmt.Printf("Dimension : %dx%d\n", rowCount, colCount)
 
-	totalCells := rowCount * colCount
-	if len(colors) > totalCells {
-		fmt.Println("Error: More colors than available cells")
+	if len(colors) > rowCount {
+		fmt.Println("Error: More colors than rowCount/colCount, not possible")
 		return
 	}
 
