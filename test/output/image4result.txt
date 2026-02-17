@@ -1,0 +1,9 @@
+A#AAAAA
+AAAA#AA
+ADAACA#
+EDE#FFA
+#DEEGAA
+ED#EGAA
+EEEEG#A
+Time elapsed: 319 ms
+Number of combinations tried: 20574199 combinations

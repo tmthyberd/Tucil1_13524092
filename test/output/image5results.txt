@@ -1,0 +1,10 @@
+AABC#CDD
+ABBBBCB#
+#BBBBBBD
+EBBBBB#B
+EE#BBFFB
+GBBBB#BB
+GBB#BFBB
+G#BHHHBB
+Time elapsed: 58215 ms
+Number of combinations tried: 2124065349 combinations

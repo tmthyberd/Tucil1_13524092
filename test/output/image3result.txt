@@ -1,0 +1,9 @@
+AAA#CCC
+AADEE#C
+#DDEEEC
+DDDF#EG
+D#FFFEG
+DFFFFF#
+FF#FFFF
+Time elapsed: 611 ms
+Number of combinations tried: 38285067 combinations
